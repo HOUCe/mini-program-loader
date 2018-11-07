@@ -3,7 +3,7 @@ import { resolve } from 'path';
 const srcDir = resolve(__dirname, 'src');
 
 export default (options = {}) => {
-	const { target, globalPublicPath = '/', ...wxmlLoaderOptions } = options;
+	const { target, globalPublicPath = '/', ...loaderOptions } = options;
 	return {
 		entry: resolve(__dirname, 'src', 'index.wxml'),
 		mode: 'development',
@@ -30,7 +30,7 @@ export default (options = {}) => {
 							loader: './src',
 							options: {
 								root: srcDir,
-								...wxmlLoaderOptions,
+								...loaderOptions,
 							},
 						},
 					],

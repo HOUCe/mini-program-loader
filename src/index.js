@@ -1,33 +1,34 @@
-import { resolve, isAbsolute, relative, dirname, join } from 'path';
-import sax from 'sax';
-import { Script } from 'vm';
-import Minifier from 'html-minifier';
-import { isUrlRequest, urlToRequest, getOptions } from 'loader-utils';
+import { resolve, isAbsolute, relative, dirname, join } from 'path'
+// A sax-style parser for XML and HTML. https://www.npmjs.com/package/sax
+import sax from 'sax'
+import { Script } from 'vm'
+import Minifier from 'html-minifier'
+import { isUrlRequest, urlToRequest, getOptions } from 'loader-utils'
 
-const ROOT_TAG_NAME = 'xxx-wxml-root-xxx';
-const ROOT_TAG_START = `<${ROOT_TAG_NAME}>`;
-const ROOT_TAG_END = `</${ROOT_TAG_NAME}>`;
-const ROOT_TAG_LENGTH = ROOT_TAG_START.length;
+const ROOT_TAG_NAME = 'xxx-wxml-root-xxx'
+const ROOT_TAG_START = `<${ROOT_TAG_NAME}>`
+const ROOT_TAG_END = `</${ROOT_TAG_NAME}>`
+const ROOT_TAG_LENGTH = ROOT_TAG_START.length
 
-const isSrc = (name) => name === 'src';
+const isSrc = (name) => name === 'src'
 
-const isDynamicSrc = (src) => /\{\{/.test(src);
+const isDynamicSrc = (src) => /\{\{/.test(src)
 
-const isStartsWithDot = (src) => /^\./.test(src);
+const isStartsWithDot = (src) => /^\./.test(src)
 
-const hasProcotol = (src) => /^(\w+:)?\/\//.test(src);
+const hasProcotol = (src) => /^(\w+:)?\/\//.test(src)
 
 const replaceAt = (str, start, end, replacement) =>
-	str.slice(0, start) + replacement + str.slice(end);
+	str.slice(0, start) + replacement + str.slice(end)
 
 const extract = (src, __webpack_public_path__) => {
-	const script = new Script(src, { displayErrors: true });
+	const script = new Script(src, { displayErrors: true })
 	const sandbox = {
 		__webpack_public_path__,
 		module: {},
 	};
-	script.runInNewContext(sandbox);
-	return sandbox.module.exports.toString();
+	script.runInNewContext(sandbox)
+	return sandbox.module.exports.toString()
 };
 
 const defaultMinimizeConf = {
@@ -55,40 +56,40 @@ const defaultMinimizeConf = {
  * @returns {string}
  */
 function getPublicPath(options, context) {
-	const property = 'publicPath';
+	const property = 'publicPath'
 	if (property in options) {
-		return options[property];
+		return options[property]
 	}
 	if (
 		context.options &&
 		context.options.output &&
 		property in context.options.output
 	) {
-		return context.options.output[property];
+		return context.options.output[property]
 	}
 	if (
 		context._compilation &&
 		context._compilation.outputOptions &&
 		property in context._compilation.outputOptions
 	) {
-		return context._compilation.outputOptions[property];
+		return context._compilation.outputOptions[property]
 	}
-	return '';
+	return ''
 }
 
 export default function (content) {
-	this.cacheable && this.cacheable();
+	this.cacheable && this.cacheable()
 
-	const callback = this.async();
-	const { options: webpackLegacyOptions, _module = {}, resourcePath } = this;
-	const { context, target } = webpackLegacyOptions || this;
+	const callback = this.async()
+	const { options: webpackLegacyOptions, _module = {}, resourcePath } = this
+	const { context, target } = webpackLegacyOptions || this
 
-	const options = getOptions(this) || {};
+	const options = getOptions(this) || {}
 
-	const { resource } = _module;
+	const { resource } = _module
 
-	const hasIssuer = _module.issuer;
-	const issuerContext = (hasIssuer && _module.issuer.context) || context;
+	const hasIssuer = _module.issuer
+	const issuerContext = (hasIssuer && _module.issuer.context) || context
 
 	const {
 		root = resolve(context, issuerContext),
@@ -98,76 +99,76 @@ export default function (content) {
 		transformContent = (content) => {
 			switch (target.name) {
 				case 'Alipay':
-					return content.replace(/\bwx:/g, 'a:');
-				case 'Wechat':
-					return content.replace(/\ba:/g, 'wx:');
+					return content.replace(/\bwx:/g, 'a:')
+				case 'Baidu':
+					return content.replace(/\bwx:/g, 'swan:')
 				default:
-					return content;
+					return content
 			}
 		},
 		transformUrl = (url) => {
 			switch (target.name) {
 				case 'Alipay':
-					return url.replace(/\.wxml$/g, '.axml');
-				case 'Wechat':
-					return url.replace(/\.axml$/g, '.wxml');
+					return url.replace(/\.wxml$/g, '.axml')
+				case 'Baidu':
+					return url.replace(/\.wxml$/g, '.swan')
 				default:
-					return url;
+					return url
 			}
 		},
 		minimize: forceMinimize,
 		...minimizeOptions
-	} = options;
+	} = options
 
-	const requests = [];
-	const hasMinimzeConfig = typeof forceMinimize === 'boolean';
-	const shouldMinimize = hasMinimzeConfig ? forceMinimize : this.minimize;
+	const requests = []
+	const hasMinimzeConfig = typeof forceMinimize === 'boolean'
+	const shouldMinimize = hasMinimzeConfig ? forceMinimize : this.minimize
 
 	const loadModule = (request) =>
 		new Promise((resolve, reject) => {
-			this.addDependency(request);
+			this.addDependency(request)
 			this.loadModule(request, (err, src) => {
 				/* istanbul ignore if */
 				if (err) {
-					reject(err);
+					reject(err)
 				}
 				else {
-					resolve(src);
+					resolve(src)
 				}
-			});
-		});
+			})
+		})
 
-	const xmlContent = `${ROOT_TAG_START}${content}${ROOT_TAG_END}`;
+	const xmlContent = `${ROOT_TAG_START}${content}${ROOT_TAG_END}`
 
 	const ensureStartsWithDot = (source) =>
-		isStartsWithDot(source) ? source : `./${source}`;
+		isStartsWithDot(source) ? source : `./${source}`
 
 	const ensureRelativePath = (source) => {
-		const sourcePath = join(root, source);
-		const resourceDirname = dirname(resourcePath);
-		source = relative(resourceDirname, sourcePath).replace(/\\/g, '/');
-		return ensureStartsWithDot(source);
-	};
+		const sourcePath = join(root, source)
+		const resourceDirname = dirname(resourcePath)
+		source = relative(resourceDirname, sourcePath).replace(/\\/g, '/')
+		return ensureStartsWithDot(source)
+	}
 
 	const replaceRequest = async ({ request, startIndex, endIndex }) => {
-		const module = await loadModule(request);
-		let source = extract(module, publicPath);
-		const isSourceAbsolute = isAbsolute(source);
+		const module = await loadModule(request)
+		let source = extract(module, publicPath)
+		const isSourceAbsolute = isAbsolute(source)
 		if (!isSourceAbsolute && !hasProcotol(source)) {
-			source = ensureStartsWithDot(source);
+			source = ensureStartsWithDot(source)
 		}
 		if (enforceRelativePath && isSourceAbsolute) {
-			source = ensureRelativePath(source);
+			source = ensureRelativePath(source)
 		}
 
 		/* istanbul ignore else */
 		if (typeof transformUrl === 'function') {
-			source = transformUrl(source, resource);
+			source = transformUrl(source, resource)
 		}
-		content = replaceAt(content, startIndex, endIndex, source);
-	};
+		content = replaceAt(content, startIndex, endIndex, source)
+	}
 
-	const parser = sax.parser(false, { lowercase: true });
+	const parser = sax.parser(false, { lowercase: true })
 
 	parser.onattribute = ({ name, value }) => {
 		if (
@@ -176,20 +177,20 @@ export default function (content) {
 			isDynamicSrc(value) ||
 			!isUrlRequest(value, root)
 		) {
-			return;
+			return
 		}
 
-		const endIndex = parser.position - 1 - ROOT_TAG_LENGTH;
-		const startIndex = endIndex - value.length;
-		const request = urlToRequest(value, root);
+		const endIndex = parser.position - 1 - ROOT_TAG_LENGTH
+		const startIndex = endIndex - value.length
+		const request = urlToRequest(value, root)
 
-		requests.unshift({ request, startIndex, endIndex });
-	};
+		requests.unshift({ request, startIndex, endIndex })
+	}
 
 	parser.onend = async () => {
 		try {
 			for (const req of requests) {
-				await replaceRequest(req);
+				await replaceRequest(req)
 			}
 
 			/* istanbul ignore else */
@@ -198,29 +199,30 @@ export default function (content) {
 				if (!format.__warned) {
 					format.__warned = true;
 					console.warn(
-						'[DEPRECATED]: wxml-loader `format` option has been deprecated.',
+						'[DEPRECATED]: mini-program-loader `format` option has been deprecated.',
 						'Please use `transformContent() instead`.',
 					);
 				}
-				content = format(content, resource);
+				content = format(content, resource)
 			}
 			else if (typeof transformContent === 'function') {
-				content = transformContent(content, resource);
+				content = transformContent(content, resource)
 			}
 
+			// todo: delete this stage, should do on consume case
 			if (shouldMinimize) {
 				content = Minifier.minify(content, {
 					...defaultMinimizeConf,
 					...minimizeOptions,
 				});
 			}
-			callback(null, content);
+			callback(null, content)
 		}
 		catch (err) {
 			/* istanbul ignore next */
-			callback(err, content);
+			callback(err, content)
 		}
-	};
+	}
 
-	parser.write(xmlContent).close();
+	parser.write(xmlContent).close()
 }
