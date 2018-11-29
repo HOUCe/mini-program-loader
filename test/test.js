@@ -92,6 +92,16 @@ describe('wxml-loader', async () => {
 		);
 	});
 
+	test('should Baidu target work', async () => {
+		await compile(
+			'<import src="/fixture.wxml" /><view wx:for="{{items}}">{{item}}</view>',
+			{ target: target(function Baidu() {}) },
+		);
+		expect(getCompiledRes()).toBe(
+			'<import src="/fixture.swan" /><view swan:for="{{items}}">{{item}}</view>',
+		);
+	});
+
 	test('should transformContent() work', async () => {
 		await compile('<view wx:for="{{items}}"> {{item}} </view>', {
 			target: target(function Alipay() {}),

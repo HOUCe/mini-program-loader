@@ -1,7 +1,7 @@
 {
   "name": "@lucashc/mini-program-loader",
   "description": "mini program loader for webpack",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "main": "lib/index",
   "files": [
     "*.md",
@@ -50,7 +50,7 @@
     "mkdirp": "^0.5.1",
     "prettier-eslint-cli": "^4.7.1",
     "rimraf": "^2.5.4",
-    "webpack": "^4.16.0"
+    "webpack": "^4.26.0"
   },
   "jest": {
     "collectCoverageFrom": [
