@@ -98,7 +98,7 @@ describe('wxml-loader', async () => {
 			{ target: target(function Baidu() {}) },
 		);
 		expect(getCompiledRes()).toBe(
-			'<import src="/fixture.swan" /><view swan:for="{{items}}">{{item}}</view>',
+			'<import src="/fixture.swan" /><view s-for="{{items}}">{{item}}</view>',
 		);
 	});
 

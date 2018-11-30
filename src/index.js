@@ -82,7 +82,7 @@ export default function (content) {
 
 	const callback = this.async()
 	const { options: webpackLegacyOptions, _module = {}, resourcePath } = this
-	const { context, target } = webpackLegacyOptions || this
+	const { context } = webpackLegacyOptions || this
 
 	const options = getOptions(this) || {}
 
@@ -97,17 +97,18 @@ export default function (content) {
 		enforceRelativePath = false,
 		format,
 		transformContent = (content) => {
-			switch (target.name) {
+			// todo: use AST
+			switch (options.buildTarget) {
 				case 'Alipay':
 					return content.replace(/\bwx:/g, 'a:')
 				case 'Baidu':
-					return content.replace(/\bwx:/g, 'swan:')
+					return content.replace(/\bwx:/g, 's-').replace(/\bis/g, 'name')
 				default:
 					return content
 			}
 		},
 		transformUrl = (url) => {
-			switch (target.name) {
+			switch (options.buildTarget) {
 				case 'Alipay':
 					return url.replace(/\.wxml$/g, '.axml')
 				case 'Baidu':
@@ -160,7 +161,6 @@ export default function (content) {
 		if (enforceRelativePath && isSourceAbsolute) {
 			source = ensureRelativePath(source)
 		}
-
 		/* istanbul ignore else */
 		if (typeof transformUrl === 'function') {
 			source = transformUrl(source, resource)
